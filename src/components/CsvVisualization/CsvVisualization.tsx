@@ -1,0 +1,693 @@
+// ========================================================================
+// REDA EMC Testing Tool - CSV Visualization Component (Enhanced)
+// ========================================================================
+// Turner Engineering Corporation - Professional EMC Testing Support
+// 
+// Professional Chart.js visualization with matplotlib-quality styling
+// ========================================================================
+
+import React, { useRef, useState, useCallback, useMemo } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ChartOptions,
+  ChartData
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import zoomPlugin from 'chartjs-plugin-zoom';
+import { useCsvOverlayState } from '../../context/AppContext';
+import { CsvService } from '../../services/CsvService';
+import { CsvOverlayDataset, DetectedPeak, BandType } from '../../types';
+import { BAND_DEFINITIONS } from '../../constants';
+import './CsvVisualization.css';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  zoomPlugin
+);
+
+// ========================================================================
+// COMPONENT INTERFACES
+// ========================================================================
+
+interface CsvVisualizationProps {
+  width?: number;
+  height?: number;
+  showControls?: boolean;
+  showLegend?: boolean;
+  onPeakClick?: (peak: DetectedPeak, dataset: CsvOverlayDataset) => void;
+}
+
+interface VisualizationState {
+  selectedBand: BandType | 'all';
+  showPeaks: boolean;
+  detectedPeaks: Array<{ dataset: CsvOverlayDataset; peaks: DetectedPeak[] }>;
+  isAnalyzing: boolean;
+  zoomLevel: number;
+  isExporting: boolean;
+}
+
+// ========================================================================
+// PROFESSIONAL CHART STYLING (MATPLOTLIB-INSPIRED)
+// ========================================================================
+
+const CHART_COLORS = {
+  primary: '#1f77b4',    // Matplotlib default blue
+  orange: '#ff7f0e',     // Matplotlib orange
+  green: '#2ca02c',      // Matplotlib green
+  red: '#d62728',        // Matplotlib red
+  purple: '#9467bd',     // Matplotlib purple
+  brown: '#8c564b',      // Matplotlib brown
+  pink: '#e377c2',       // Matplotlib pink
+  gray: '#7f7f7f',       // Matplotlib gray
+  olive: '#bcbd22',      // Matplotlib olive
+  cyan: '#17becf'        // Matplotlib cyan
+};
+
+const PROFESSIONAL_COLORS = [
+  CHART_COLORS.primary,
+  CHART_COLORS.orange,
+  CHART_COLORS.green,
+  CHART_COLORS.red,
+  CHART_COLORS.purple,
+  CHART_COLORS.brown,
+  CHART_COLORS.pink,
+  CHART_COLORS.gray
+];
+
+// ========================================================================
+// CSV VISUALIZATION COMPONENT
+// ========================================================================
+
+export const CsvVisualization: React.FC<CsvVisualizationProps> = ({
+  width = 1000,
+  height = 600,
+  showControls = true,
+  showLegend = true,
+  onPeakClick
+}) => {
+  const { csvOverlayState, updateCsvOverlayState } = useCsvOverlayState();
+  const chartRef = useRef<ChartJS<'line'>>(null);
+
+  const [vizState, setVizState] = useState<VisualizationState>({
+    selectedBand: 'all',
+    showPeaks: false,
+    detectedPeaks: [],
+    isAnalyzing: false,
+    zoomLevel: 1,
+    isExporting: false
+  });
+
+  // ========================================================================
+  // DATA PROCESSING
+  // ========================================================================
+
+  const processedDatasets = useMemo(() => {
+    if (!csvOverlayState.datasets || csvOverlayState.datasets.length === 0) {
+      return [];
+    }
+
+    return csvOverlayState.datasets
+      .filter(dataset => dataset.visible)
+      .map((dataset, index) => {
+        let processedData = dataset.data;
+
+        // Auto-detect band from frequency range and filter to only that band region
+        const frequencies = dataset.data.map(point => point.frequency / 1e6); // Convert to MHz
+        const minFreq = Math.min(...frequencies);
+        const maxFreq = Math.max(...frequencies);
+        const detectedBand = CsvService.detectBandFromFrequencyRange(minFreq, maxFreq);
+        
+        // If band is detected, filter data to only show that band region
+        if (detectedBand) {
+          const bandDefinition = BAND_DEFINITIONS[detectedBand];
+          const startHz = bandDefinition.startMHz * 1e6;
+          const endHz = bandDefinition.endMHz * 1e6;
+          
+          // Filter to exact band boundaries
+          processedData = dataset.data.filter(point => 
+            point.frequency >= startHz && point.frequency <= endHz
+          );
+          
+          console.log(`🎯 Filtered ${dataset.filename} to band ${detectedBand} (${bandDefinition.range}): ${processedData.length} points (${startHz/1e6}-${endHz/1e6} MHz)`);
+        }
+
+        // Use the color assigned during file loading (preserves panel colors)
+        const color = dataset.color || PROFESSIONAL_COLORS[index % PROFESSIONAL_COLORS.length];
+
+        return {
+          ...dataset,
+          data: processedData,
+          color: color,
+          frequencyData: processedData.map(point => point.frequency / 1e6), // Convert to MHz
+          amplitudeData: processedData.map(point => point.amplitude),
+          detectedBand: detectedBand
+        };
+      });
+  }, [csvOverlayState.datasets]);
+
+  // ========================================================================
+  // PROFESSIONAL CHART CONFIGURATION
+  // ========================================================================
+
+  const chartData: ChartData<'line'> = useMemo(() => {
+    console.log(`📊 Processing ${processedDatasets.length} datasets for visualization:`, 
+      processedDatasets.map(d => `${d.filename} (${d.panelId}) - ${d.data.length} points`));
+    
+    const datasets = processedDatasets.map((dataset, index) => ({
+      label: dataset.label,
+      data: dataset.frequencyData.map((freq, dataIndex) => ({
+        x: freq,
+        y: dataset.amplitudeData[dataIndex]
+      })),
+      borderColor: dataset.color,
+      backgroundColor: `${dataset.color}15`, // 15% opacity
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      pointHoverBorderWidth: 2,
+      pointHoverBorderColor: '#ffffff',
+      fill: false,
+      tension: 0.1,
+      spanGaps: false
+    }));
+
+    // NYCT limit lines removed per user request
+
+    return { datasets };
+  }, [processedDatasets]);
+
+  const chartOptions: ChartOptions<'line'> = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    devicePixelRatio: 2, // High DPI rendering
+    plugins: {
+      title: {
+        display: true,
+        text: (() => {
+          const leftPanelDatasets = processedDatasets.filter(d => d.panelId === 'dataset-a');
+          const rightPanelDatasets = processedDatasets.filter(d => d.panelId === 'dataset-b');
+          
+          if (leftPanelDatasets.length > 0 && rightPanelDatasets.length > 0) {
+            const leftTitle = leftPanelDatasets[0].filename.replace('.csv', '');
+            const rightTitle = rightPanelDatasets[0].filename.replace('.csv', '');
+            return `${leftTitle} vs. ${rightTitle}`;
+          } else if (leftPanelDatasets.length > 0) {
+            return leftPanelDatasets[0].filename.replace('.csv', '');
+          } else if (rightPanelDatasets.length > 0) {
+            return rightPanelDatasets[0].filename.replace('.csv', '');
+          }
+          return 'EMC Spectrum Analysis';
+        })(),
+        font: {
+          size: 18,
+          weight: 'bold',
+          family: 'Arial, sans-serif'
+        },
+        padding: 20,
+        color: '#2c3e50'
+      },
+      legend: {
+        display: showLegend,
+        position: 'bottom' as const,
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'line',
+          font: {
+            size: 12,
+            family: 'Arial, sans-serif'
+          },
+          padding: 15
+        }
+      },
+      tooltip: {
+        mode: 'nearest',
+        intersect: false,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#ffffff',
+        borderWidth: 1,
+        cornerRadius: 6,
+        displayColors: true,
+        callbacks: {
+          title: (context) => {
+            return `Frequency: ${context[0].parsed.x.toFixed(3)} MHz`;
+          },
+          label: (context) => {
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} dBμV/m`;
+          }
+        }
+      },
+      zoom: {
+        zoom: {
+          wheel: {
+            enabled: true,
+            modifierKey: 'ctrl'
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'xy',
+          onZoom: ({ chart }) => {
+            const zoomLevel = chart.getZoomLevel();
+            setVizState(prev => ({ ...prev, zoomLevel }));
+          }
+        },
+        pan: {
+          enabled: true,
+          mode: 'xy'
+        }
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        title: {
+          display: true,
+          text: 'Frequency (MHz)',
+          font: {
+            size: 14,
+            weight: 'bold',
+            family: 'Arial, sans-serif'
+          },
+          color: '#2c3e50'
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          lineWidth: 1
+        },
+        min: (() => {
+          // Set x-axis to full band range if all datasets are from the same band
+          const bands = processedDatasets.map(d => d.detectedBand).filter(Boolean);
+          if (bands.length > 0 && bands.every(band => band === bands[0])) {
+            const bandDef = BAND_DEFINITIONS[bands[0] as BandType];
+            return bandDef.startMHz;
+          }
+          return undefined;
+        })(),
+        max: (() => {
+          // Set x-axis to full band range if all datasets are from the same band
+          const bands = processedDatasets.map(d => d.detectedBand).filter(Boolean);
+          if (bands.length > 0 && bands.every(band => band === bands[0])) {
+            const bandDef = BAND_DEFINITIONS[bands[0] as BandType];
+            return bandDef.endMHz;
+          }
+          return undefined;
+        })(),
+        ticks: {
+          font: {
+            size: 11,
+            family: 'Arial, sans-serif'
+          },
+          color: '#2c3e50',
+          maxTicksLimit: 11, // Exactly 11 ticks = 10 divisions
+          stepSize: undefined, // Let Chart.js calculate optimal step size
+          callback: function(value: any) {
+            const numValue = Number(value);
+            if (numValue >= 1000) {
+              return (numValue / 1000).toFixed(1) + 'k';
+            } else if (numValue >= 1) {
+              return numValue.toFixed(1);
+            } else {
+              return numValue.toFixed(3);
+            }
+          }
+        }
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Amplitude (dBμV/m)',
+          font: {
+            size: 14,
+            weight: 'bold',
+            family: 'Arial, sans-serif'
+          },
+          color: '#2c3e50'
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+          lineWidth: 1
+        },
+        ticks: {
+          font: {
+            size: 11,
+            family: 'Arial, sans-serif'
+          },
+          color: '#2c3e50',
+          stepSize: 10, // 10dB increments
+          callback: function(value: any) {
+            return Number(value).toFixed(0) + ' dB';
+          }
+        }
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'nearest'
+    },
+    onClick: (event, elements) => {
+      if (elements.length > 0 && onPeakClick) {
+        const element = elements[0];
+        const datasetIndex = element.datasetIndex;
+        const dataIndex = element.index;
+        
+        if (datasetIndex < processedDatasets.length) {
+          const dataset = processedDatasets[datasetIndex];
+          const frequency = dataset.frequencyData[dataIndex];
+          const amplitude = dataset.amplitudeData[dataIndex];
+          
+          // Find if this point is a detected peak
+          const peakData = vizState.detectedPeaks.find(p => p.dataset.id === dataset.id);
+          const peak = peakData?.peaks.find(p => 
+            Math.abs(p.frequency - frequency) < 0.001 && 
+            Math.abs(p.amplitude - amplitude) < 0.1
+          );
+          
+          if (peak) {
+            onPeakClick(peak, dataset);
+          }
+        }
+      }
+    }
+  }), [showLegend, processedDatasets, vizState.detectedPeaks, onPeakClick]);
+
+  // ========================================================================
+  // EXPORT FUNCTIONALITY
+  // ========================================================================
+
+  const exportChart = useCallback(async (format: 'png' | 'pdf' = 'png') => {
+    if (!chartRef.current) return;
+
+    setVizState(prev => ({ ...prev, isExporting: true }));
+
+    try {
+      const canvas = chartRef.current.canvas;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      // Generate professional filename based on datasets
+      const leftPanelDatasets = processedDatasets.filter(d => d.panelId === 'dataset-a');
+      const rightPanelDatasets = processedDatasets.filter(d => d.panelId === 'dataset-b');
+      
+      let filename = '';
+      if (leftPanelDatasets.length > 0 && rightPanelDatasets.length > 0) {
+        const leftNames = leftPanelDatasets.map(d => d.filename.replace('.csv', '')).join('+');
+        const rightNames = rightPanelDatasets.map(d => d.filename.replace('.csv', '')).join('+');
+        filename = `${leftNames} vs ${rightNames}`;
+      } else if (leftPanelDatasets.length > 0) {
+        filename = leftPanelDatasets.map(d => d.filename.replace('.csv', '')).join('+');
+      } else if (rightPanelDatasets.length > 0) {
+        filename = rightPanelDatasets.map(d => d.filename.replace('.csv', '')).join('+');
+      } else {
+        filename = 'EMC_Spectrum_Analysis';
+      }
+      
+      // Add timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      filename = `${filename}_${timestamp}`;
+
+      // Create high-resolution export canvas
+      const exportCanvas = document.createElement('canvas');
+      const exportCtx = exportCanvas.getContext('2d');
+      
+      if (!exportCtx) throw new Error('Could not create export canvas');
+
+      // Set high resolution (300 DPI equivalent)
+      const scale = 4; // Increased scale for better quality
+      exportCanvas.width = canvas.width * scale;
+      exportCanvas.height = canvas.height * scale;
+      
+      // Set white background
+      exportCtx.fillStyle = '#ffffff';
+      exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      
+      // Enable high-quality rendering
+      exportCtx.imageSmoothingEnabled = true;
+      exportCtx.imageSmoothingQuality = 'high';
+      
+      // Scale and draw the chart
+      exportCtx.scale(scale, scale);
+      exportCtx.drawImage(canvas, 0, 0);
+
+      // Add professional metadata
+      const metadata = `Generated by REDA EMC Testing Tool v4.1 - Turner Engineering Corporation - ${new Date().toLocaleString()}`;
+      exportCtx.font = '8px Arial';
+      exportCtx.fillStyle = '#666666';
+      exportCtx.fillText(metadata, 10, exportCanvas.height / scale - 15);
+      
+      // Add dataset information
+      const datasetInfo = `Datasets: ${processedDatasets.length} files | Left Panel (Blue): ${leftPanelDatasets.length} | Right Panel (Orange): ${rightPanelDatasets.length}`;
+      exportCtx.fillText(datasetInfo, 10, exportCanvas.height / scale - 5);
+
+      // Convert to blob and download
+      exportCanvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${filename}.${format}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          console.log(`📸 Chart exported as: ${filename}.${format}`);
+        }
+      }, `image/${format}`, 0.95);
+
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setVizState(prev => ({ ...prev, isExporting: false }));
+    }
+  }, [processedDatasets]);
+
+  // ========================================================================
+  // CHART CONTROLS
+  // ========================================================================
+
+  const resetZoom = useCallback(() => {
+    if (chartRef.current) {
+      chartRef.current.resetZoom();
+      setVizState(prev => ({ ...prev, zoomLevel: 1 }));
+    }
+  }, []);
+
+  const autoScale = useCallback(() => {
+    if (chartRef.current && processedDatasets.length > 0) {
+      const allFrequencies = processedDatasets.flatMap(d => d.frequencyData);
+      const allAmplitudes = processedDatasets.flatMap(d => d.amplitudeData);
+
+      if (allFrequencies.length > 0 && allAmplitudes.length > 0) {
+        const ranges = CsvService.calculateNiceRanges(
+          Math.min(...allFrequencies),
+          Math.max(...allFrequencies),
+          Math.min(...allAmplitudes),
+          Math.max(...allAmplitudes)
+        );
+
+        // Update chart scales
+        if (chartRef.current.options.scales?.x && chartRef.current.options.scales?.y) {
+          chartRef.current.options.scales.x.min = ranges.frequency.min;
+          chartRef.current.options.scales.x.max = ranges.frequency.max;
+          chartRef.current.options.scales.y.min = ranges.amplitude.min;
+          chartRef.current.options.scales.y.max = ranges.amplitude.max;
+          chartRef.current.update();
+        }
+      }
+    }
+  }, [processedDatasets]);
+
+
+
+  const toggleDatasetVisibility = useCallback((datasetId: string) => {
+    updateCsvOverlayState({
+      datasets: csvOverlayState.datasets.map(dataset =>
+        dataset.id === datasetId
+          ? { ...dataset, visible: !dataset.visible }
+          : dataset
+      )
+    });
+  }, [csvOverlayState.datasets, updateCsvOverlayState]);
+
+  // ========================================================================
+  // RENDER HELPERS
+  // ========================================================================
+
+  const renderControls = () => {
+    if (!showControls) return null;
+
+    return (
+      <div className="chart-controls professional">
+        <div className="control-row">
+          <div className="control-group">
+            <button onClick={resetZoom} className="control-btn professional">
+              🔄 Reset Zoom
+            </button>
+            <button onClick={autoScale} className="control-btn professional">
+              📐 Auto Scale
+            </button>
+          </div>
+        </div>
+
+        {processedDatasets.length > 1 && (
+          <div className="comparison-info">
+            <h4>📊 Dataset Comparison:</h4>
+            <p>{processedDatasets.length} datasets loaded for comparison</p>
+            <small>Use Ctrl+Scroll to zoom, Click and drag to pan</small>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderDatasetList = () => {
+    if (csvOverlayState.datasets.length === 0) return null;
+
+    return (
+      <div className="dataset-list professional">
+        <h4>📈 Datasets ({csvOverlayState.datasets.length}):</h4>
+        {csvOverlayState.datasets.map((dataset, index) => (
+          <div key={dataset.id} className="dataset-item professional">
+            <label className="dataset-checkbox">
+              <input
+                type="checkbox"
+                checked={dataset.visible}
+                onChange={() => toggleDatasetVisibility(dataset.id)}
+              />
+              <span 
+                className="dataset-color" 
+                style={{ backgroundColor: PROFESSIONAL_COLORS[index % PROFESSIONAL_COLORS.length] }}
+              ></span>
+              <span className="dataset-name">{dataset.label}</span>
+            </label>
+            <div className="dataset-info">
+              <small>{dataset.data.length.toLocaleString()} points</small>
+              <small>{dataset.filename}</small>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderExportControls = () => {
+    if (csvOverlayState.datasets.length === 0) return null;
+
+    return (
+      <div className="export-controls professional">
+        <div className="export-section">
+          <h4>📥 Export Options</h4>
+          <div className="export-buttons">
+            <button 
+              onClick={() => exportChart('png')} 
+              className="export-btn primary"
+              disabled={vizState.isExporting || processedDatasets.length === 0}
+              style={{
+                backgroundColor: vizState.isExporting ? '#95a5a6' : '#2ecc71',
+                border: 'none',
+                color: 'white',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                cursor: vizState.isExporting ? 'not-allowed' : 'pointer',
+                boxShadow: vizState.isExporting ? 'none' : '0 4px 12px rgba(46, 204, 113, 0.3)',
+                transform: vizState.isExporting ? 'none' : 'translateY(-1px)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {vizState.isExporting ? '⏳ Exporting...' : '📸 Export Professional PNG'}
+            </button>
+            <button 
+              onClick={() => exportChart('png')} 
+              className="export-btn secondary"
+              disabled={vizState.isExporting || processedDatasets.length === 0}
+            >
+              📊 Export with Data
+            </button>
+            <button 
+              onClick={() => {
+                const csvData = CsvService.exportToCSV(csvOverlayState.datasets);
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `EMC_Data_Export_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }} 
+              className="export-btn secondary"
+              disabled={processedDatasets.length === 0}
+            >
+              📄 Export CSV Data
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ========================================================================
+  // MAIN RENDER
+  // ========================================================================
+
+  if (csvOverlayState.datasets.length === 0) {
+    return (
+      <div className="csv-visualization-empty professional">
+        <div className="empty-state">
+          <div className="empty-icon">📊</div>
+          <h3>Professional EMC Spectrum Analysis</h3>
+          <p>Upload CSV files to visualize and compare EMC spectrum data</p>
+          <div className="features-list">
+            <div className="feature">✓ Two-dataset comparison</div>
+            <div className="feature">✓ Professional matplotlib-style plots</div>
+            <div className="feature">✓ High-resolution export</div>
+            <div className="feature">✓ Automatic EMC band detection</div>
+            <div className="feature">✓ Band-specific frequency filtering</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="csv-visualization professional">
+      {renderControls()}
+      {renderExportControls()}
+      
+      <div className="chart-container professional">
+        <Line
+          ref={chartRef}
+          data={chartData}
+          options={chartOptions}
+          width={width}
+          height={height}
+        />
+      </div>
+
+      {renderDatasetList()}
+    </div>
+  );
+};
+
+export default CsvVisualization; 
