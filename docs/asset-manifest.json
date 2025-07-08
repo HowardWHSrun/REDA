@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/REDA/static/css/main.f6987254.css",
+    "main.js": "/REDA/static/js/main.e906bb5e.js",
+    "static/js/453.48c37ca1.chunk.js": "/REDA/static/js/453.48c37ca1.chunk.js",
+    "index.html": "/REDA/index.html",
+    "main.f6987254.css.map": "/REDA/static/css/main.f6987254.css.map",
+    "main.e906bb5e.js.map": "/REDA/static/js/main.e906bb5e.js.map",
+    "453.48c37ca1.chunk.js.map": "/REDA/static/js/453.48c37ca1.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f6987254.css",
+    "static/js/main.e906bb5e.js"
+  ]
+}
