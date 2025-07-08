@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figure Export Tool v4.1 - Turner Engineering Corporation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container csv-theme" id="appContainer">
+        <!-- Hidden radio inputs for JavaScript compatibility -->
+        <div style="display: none;">
+            <input type="radio" name="inputType" value="images" id="hiddenImageInput">
+            <input type="radio" name="inputType" value="csv" id="hiddenCsvInput" checked>
+        </div>
+        <header>
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="tenco-logo.png" alt="Turner Engineering Corporation" class="company-logo" onerror="this.style.display='none'">
+                </div>
+                <div class="title-section">
+                    <h1>Figure Export Tool v4.0</h1>
+                    <p class="subtitle">Professional EMC Testing Annotation System</p>
+                    <p class="company-name">Turner Engineering Corporation</p>
+                </div>
+                <div class="mode-selector-section">
+                    <div class="mode-tabs">
+                        <button class="mode-tab csv-mode active" data-mode="csv">
+                            <span class="mode-icon">📊</span>
+                            <span class="mode-text">CSV Data Files</span>
+                            <span class="mode-subtitle">Spectrum Analysis</span>
+                        </button>
+                        <button class="mode-tab image-mode" data-mode="images">
+                            <span class="mode-icon">📷</span>
+                            <span class="mode-text">Image Files</span>
+                            <span class="mode-subtitle">Visual Documentation</span>
+                        </button>
+                        <button class="mode-tab correction-mode" data-mode="correction">
+                            <span class="mode-icon">⚡</span>
+                            <span class="mode-text">EMI Correction</span>
+                            <span class="mode-subtitle">Data Correction</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+
+
+        <div class="main-content">
+            <!-- Left Panel: Controls -->
+            <div class="left-panel">
+                <div class="layout-control" id="layoutControl" style="display: none;">
+                    <h2>Layout Options</h2>
+                    <div class="layout-toggle">
+                        <label>
+                            <input type="radio" name="layout" value="horizontal" checked>
+                            <span>Side by Side</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="layout" value="vertical">
+                            <span>Stacked</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Image Upload Section -->
+                <div class="upload-section" id="imageUploadSection" style="display: none;">
+                    <h2>Upload Images</h2>
+                    <div class="dual-upload" id="dualUpload">
+                        <div class="upload-container">
+                            <h3>Image 1</h3>
+                            <div class="upload-area" id="uploadArea1">
+                                <input type="file" id="imageInput1" accept="image/*" style="display: none;">
+                                <div class="upload-placeholder">
+                                    <p>Click to select or drag & drop</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="upload-container">
+                            <h3>Image 2</h3>
+                            <div class="upload-area" id="uploadArea2">
+                                <input type="file" id="imageInput2" accept="image/*" style="display: none;">
+                                <div class="upload-placeholder">
+                                    <p>Click to select or drag & drop</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV Data Selection Section -->
+                <div class="upload-section" id="csvUploadSection">
+                    <h2>CSV Data Selection</h2>
+                    
+                    <!-- Step 1: Folder Selection -->
+                    <div class="folder-selection-container">
+                        <h3>📁 Step 1: Select Data Folder</h3>
+                        <div class="folder-upload-area" id="folderUploadArea">
+                            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+                            <div class="upload-placeholder">
+                                <div class="folder-icon">📁</div>
+                                <p>Click to browse data folder</p>
+                                <small>Select folder containing CSV files</small>
+                            </div>
+                        </div>
+                        <div class="folder-status" id="folderStatus">
+                            <span>No folder selected</span>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: File Selection -->
+                    <div class="file-selection-container" id="fileSelectionContainer" style="display: none;">
+                        <h3>📊 Step 2: Choose Files to Compare</h3>
+                        <div class="selection-controls">
+                            <div class="band-filter">
+                                <label for="bandFilter">Filter by Band:</label>
+                                <select id="bandFilter">
+                                    <option value="all">All Bands</option>
+                                    <option value="B0">Band 0 (10-160 kHz)</option>
+                                    <option value="B1">Band 1 (150-650 kHz)</option>
+                                    <option value="B2">Band 2 (500 kHz-3 MHz)</option>
+                                    <option value="B3">Band 3 (2.5-7.5 MHz)</option>
+                                    <option value="B4">Band 4 (5-30 MHz)</option>
+                                    <option value="B5">Band 5 (25-325 MHz)</option>
+                                    <option value="B6">Band 6 (0.3-1.3 GHz)</option>
+                                    <option value="B7">Band 7 (1.0-6.0 GHz)</option>
+                                </select>
+                            </div>
+                            <div class="selection-counter">
+                                <span id="selectionCounter">0/2 files selected</span>
+                                <button id="clearSelection" class="btn btn-small">Clear Selection</button>
+                            </div>
+                        </div>
+                        
+                        <div class="available-files-list" id="availableFilesList">
+                            <!-- File list will be populated here -->
+                        </div>
+                        
+                        <div class="plot-controls">
+                            <button id="plotSelectedBtn" class="btn btn-primary" disabled>Plot Selected Files</button>
+                            <button id="refreshFolderBtn" class="btn btn-secondary">Refresh Folder</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Currently Plotted -->
+                    <div class="plotted-files-container" id="plottedFilesContainer" style="display: none;">
+                        <h3>📈 Currently Plotted</h3>
+                        <div class="plotted-files-list" id="plottedFilesList">
+                            <!-- Currently plotted files will be shown here -->
+                        </div>
+                        <div class="plot-actions">
+                            <button id="clearPlotBtn" class="btn btn-warning">Clear Plot</button>
+                            <button id="selectNewBtn" class="btn btn-secondary">Select Different Files</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV Data Information Form -->
+                <div class="csv-form-section" id="csvFormSection">
+                    <div class="form-container">
+                        <h3>CSV Data Information</h3>
+                        <div class="form-group">
+                            <label for="csvRunId">Run ID:</label>
+                            <input type="text" id="csvRunId" placeholder="e.g., 127-71">
+                        </div>
+                        <div class="form-group">
+                            <label for="csvBand">Band:</label>
+                            <input type="text" id="csvBand" placeholder="e.g., B6">
+                        </div>
+                        <div class="form-group">
+                            <label for="csvDescription">Description:</label>
+                            <input type="text" id="csvDescription" placeholder="e.g., 50 Ohm Term Test Site 7">
+                        </div>
+                        <div class="form-group">
+                            <label for="csvTraces">Traces:</label>
+                            <textarea id="csvTraces" placeholder="e.g., Peak hold measurements&#10;Background noise floor&#10;Specific test conditions" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EMI Correction Section -->
+                <div class="correction-section" id="correctionSection" style="display: none;">
+                    <h2>EMI Measurement Correction</h2>
+                    
+                    <!-- Measurement File Upload -->
+                    <div class="correction-upload-group">
+                        <h3>Measurement File</h3>
+                        <div class="upload-area" id="measurementUploadArea">
+                            <input type="file" id="measurementFileInput" accept=".csv,.txt" style="display: none;">
+                            <div class="upload-placeholder">
+                                <p>Click to select measurement file</p>
+                                <small>CSV format with frequency and amplitude data</small>
+                            </div>
+                        </div>
+                        <div id="measurementStatus" class="file-status">No file selected</div>
+                    </div>
+
+                    <!-- Add Correction File Upload -->
+                    <div class="correction-upload-group">
+                        <h3>Correction to Add</h3>
+                        <div class="upload-area" id="addCorrectionUploadArea">
+                            <input type="file" id="addCorrectionFileInput" accept=".csv,.txt" style="display: none;">
+                            <div class="upload-placeholder">
+                                <p>Click to select correction file</p>
+                                <small>PCEP correction data to add</small>
+                            </div>
+                        </div>
+                        <div id="addCorrectionStatus" class="file-status">No file selected</div>
+                    </div>
+
+                    <!-- Subtract Correction File Upload -->
+                    <div class="correction-upload-group">
+                        <h3>Correction to Subtract</h3>
+                        <div class="upload-area" id="subtractCorrectionUploadArea">
+                            <input type="file" id="subtractCorrectionFileInput" accept=".csv,.txt" style="display: none;">
+                            <div class="upload-placeholder">
+                                <p>Click to select correction file</p>
+                                <small>PCEP correction data to subtract</small>
+                            </div>
+                        </div>
+                        <div id="subtractCorrectionStatus" class="file-status">No file selected</div>
+                    </div>
+
+                    <!-- Correction Controls -->
+                    <div class="correction-controls">
+                        <button id="applyCorrectionBtn" class="btn btn-primary" disabled>Apply Correction</button>
+                        <button id="exportCorrectedBtn" class="btn btn-secondary" disabled>Export Corrected Data</button>
+                        <button id="resetCorrectionBtn" class="btn btn-warning">Reset</button>
+                    </div>
+
+                    <!-- Correction Statistics -->
+                    <div class="correction-statistics">
+                        <div id="correctionStatistics">
+                            <p class="helper-hint">Upload files and apply correction to see statistics</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dual-form-section" id="dualFormSection" style="display: none;">
+                    <div class="form-container">
+                        <h3>Image 1 Information</h3>
+                        <div class="form-group">
+                            <label for="runId1">Run ID:</label>
+                            <input type="text" id="runId1" placeholder="e.g., 127-71">
+                        </div>
+                        <div class="form-group">
+                            <label for="band1">Band:</label>
+                            <input type="text" id="band1" placeholder="e.g., B6">
+                        </div>
+                        <div class="form-group">
+                            <label for="location1">Location:</label>
+                            <input type="text" id="location1" placeholder="e.g., Ambient">
+                        </div>
+                        <div class="form-group">
+                            <label for="testType1">Test Type:</label>
+                            <input type="text" id="testType1" placeholder="e.g., Crane Car hybrid">
+                        </div>
+                        <div class="form-group">
+                            <label for="equipmentDescription1">Equipment Description:</label>
+                            <input type="text" id="equipmentDescription1" placeholder="e.g., diesel loco off, battery high charging">
+                        </div>
+                        <div class="form-group">
+                            <label for="operatingCondition1">Operating Condition:</label>
+                            <input type="text" id="operatingCondition1" placeholder="e.g., crane operation">
+                        </div>
+                        <div class="form-group">
+                            <label for="traces1">Traces:</label>
+                            <textarea id="traces1" placeholder="e.g., Top - maximum peak hold&#10;Bottom - minimum peak hold" rows="2"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-container">
+                        <h3>Image 2 Information</h3>
+                        <div class="form-group">
+                            <label for="runId2">Run ID:</label>
+                            <input type="text" id="runId2" placeholder="e.g., 127-71">
+                        </div>
+                        <div class="form-group">
+                            <label for="band2">Band:</label>
+                            <input type="text" id="band2" placeholder="e.g., B6">
+                        </div>
+                        <div class="form-group">
+                            <label for="location2">Location:</label>
+                            <input type="text" id="location2" placeholder="e.g., Ambient">
+                        </div>
+                        <div class="form-group">
+                            <label for="testType2">Test Type:</label>
+                            <input type="text" id="testType2" placeholder="e.g., Crane Car hybrid">
+                        </div>
+                        <div class="form-group">
+                            <label for="equipmentDescription2">Equipment Description:</label>
+                            <input type="text" id="equipmentDescription2" placeholder="e.g., diesel loco off, battery high charging">
+                        </div>
+                        <div class="form-group">
+                            <label for="operatingCondition2">Operating Condition:</label>
+                            <input type="text" id="operatingCondition2" placeholder="e.g., crane operation">
+                        </div>
+                        <div class="form-group">
+                            <label for="traces2">Traces:</label>
+                            <textarea id="traces2" placeholder="e.g., Top - maximum peak hold&#10;Bottom - minimum peak hold" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions-section">
+                    <h2>Actions</h2>
+                    <div class="export-buttons">
+                        <button id="exportImage1" class="btn btn-primary">Export CSV Overlay</button>
+                        <button id="exportImage2" class="btn btn-primary" style="display: none;">Export Image 2</button>
+                        <button id="exportBoth" class="btn btn-primary" style="display: none;">Export Both Images</button>
+                    </div>
+                    <button id="clearStats" class="btn btn-secondary">Clear</button>
+                </div>
+            </div>
+
+            <!-- Center Panel: Dual Images -->
+            <div class="center-panel">
+                <!-- Information Tables Above Images -->
+                <div class="dual-info-tables" id="dualInfoTables" style="display: none;">
+                    <div class="info-table">
+                        <h4 id="dataType1Header">Image 1</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Run</th>
+                                    <th>Band</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="tableRun1">-</td>
+                                    <td id="tableBand1">-</td>
+                                    <td id="tableLocation1">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="info-table">
+                        <h4 id="dataType2Header">Image 2</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Run</th>
+                                    <th>Band</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="tableRun2">-</td>
+                                    <td id="tableBand2">-</td>
+                                    <td id="tableLocation2">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Dual Data Container (Images or CSV Graphs) -->
+                <div class="dual-data-container" id="dualDataContainer">
+                    <!-- Image Display Container -->
+                    <div class="dual-image-container" id="dualImageContainer" style="display: none;">
+                        <div class="image-container">
+                            <canvas id="annotationCanvas1"></canvas>
+                            <div class="instruction-overlay" id="instructionOverlay1">
+                                <p>Upload Image 1</p>
+                            </div>
+                        </div>
+                        <div class="image-container">
+                            <canvas id="annotationCanvas2"></canvas>
+                            <div class="instruction-overlay" id="instructionOverlay2">
+                                <p>Upload Image 2</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSV Graph Container -->
+                    <div class="dual-csv-container" id="dualCsvContainer">
+
+
+                        <!-- Overlay Comparison Mode -->
+                        <div class="csv-overlay-mode" id="csvOverlayMode">
+                            <div class="csv-overlay-container">
+                                <div class="csv-graph-header">
+                                                                         <!-- CSV Data Title Section - Hidden for clean layout -->
+                                    <div class="csv-data-title" id="csvDataTitle" style="display: none;">
+                                        <h4 class="graph-main-title">Spectrum Comparison</h4>
+                                                                                 <div class="csv-info-display" id="csvInfoDisplay">
+                                            <div class="csv-info-row">
+                                                <span class="info-label">Run ID:</span>
+                                                <span class="info-value" id="titleRunId">-</span>
+                                            </div>
+                                            <div class="csv-info-row">
+                                                <span class="info-label">Band:</span>
+                                                <span class="info-value" id="titleBand">-</span>
+                                            </div>
+                                            <div class="csv-info-row">
+                                                <span class="info-label">Description:</span>
+                                                <span class="info-value" id="titleDescription">-</span>
+                                            </div>
+                                            <div class="csv-info-row">
+                                                <span class="info-label">Traces:</span>
+                                                <span class="info-value" id="titleTraces">-</span>
+                                            </div>
+                                            <div class="csv-info-row">
+                                                <span class="info-label">Comment:</span>
+                                                <span class="info-value" id="titleComment">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="graph-controls">
+                                        <button class="control-btn" onclick="figureExportTool.resetZoomOverlay()">Reset Zoom</button>
+                                        <button class="control-btn" onclick="figureExportTool.autoScaleOverlay()">Auto Scale</button>
+                                        <button class="control-btn" onclick="figureExportTool.exportOverlayData()" title="Export Overlay">📤</button>
+                                        <button class="control-btn" onclick="figureExportTool.enterFullScreenOverlay()" title="Full Screen">⛶</button>
+                                    </div>
+                                </div>
+                                <canvas id="csvOverlayCanvas"></canvas>
+                                <div class="instruction-overlay clickable-overlay" id="csvOverlayInstructionOverlay">
+                                    <div class="upload-icon">📁</div>
+                                    <p>Click to Upload CSV Files</p>
+                                    <small>Multiple datasets will be displayed with different colors</small>
+                                    <small>Hold Ctrl/Cmd to select multiple files</small>
+                                </div>
+                                <div class="csv-legend" id="csvLegend">
+                                    <h5>Legend</h5>
+                                    <div class="legend-items" id="legendItems">
+                                        <!-- Legend items will be added dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EMI Correction Visualization Mode -->
+                        <div class="correction-visualization-mode" id="correctionVisualizationMode" style="display: none;">
+                            <div class="correction-visualization-container">
+                                <div class="csv-graph-header">
+                                    <h4>EMI Correction Visualization</h4>
+                                    <div class="graph-controls">
+                                        <button class="control-btn" id="correctionResetZoom">Reset Zoom</button>
+                                        <button class="control-btn" id="correctionZoomIn">Zoom In</button>
+                                        <button class="control-btn" id="correctionZoomOut">Zoom Out</button>
+                                    </div>
+                                </div>
+                                <canvas id="correctionCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Comments and Band Selection -->
+            <div class="right-panel">
+                <!-- Comments Section -->
+                <div class="comments-section">
+                    <h3>Comments</h3>
+                    <div class="form-group">
+                        <textarea id="comments" placeholder="Additional notes, observations, test conditions, anomalies, or other relevant information..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2025 Turner Engineering Corporation. All rights reserved.</p>
+                <p>Professional EMC Testing Tools | Corrected Band Ranges & Smart Detection v4.1</p>
+                <div class="attribution">
+                    <p>Developed by Howard Wang | Supervised by Temba Mateke</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Band Database Scripts (B0-B7) -->
+    <script src="peak-identification-database-band0.js"></script>
+    <script src="peak-identification-database-band1.js"></script>
+    <script src="peak-identification-database-band2.js"></script>
+    <script src="peak-identification-database-band3.js"></script>
+    <script src="peak-identification-database-band4.js"></script>
+    <script src="peak-identification-database-band5.js"></script>
+    <script src="peak-identification-database-band6.js"></script>
+    <script src="peak-identification-database-band7.js"></script>
+    <script src="emi-correction.js"></script>
+    <script src="script.js"></script>
+
+    <!--========================================
+         BACKUP SECTIONS - TEMPORARILY REMOVED
+         ========================================
+         
+         TO RESTORE EMISSION LIMITS & PEAK IDENTIFICATION:
+         1. Copy the sections below
+         2. Paste them back in the right-panel after the comments-section
+         3. Remove the HTML comment tags around them
+         4. Delete this backup section
+         
+                
+                Limit Lines Configuration
+                <div class="limit-lines-section">
+                    <h3>Emission Limits</h3>
+                    <div class="limit-controls">
+                        <label>
+                            <input type="checkbox" id="showLimitLines" checked>
+                            Show Limit Lines on CSV Graphs
+                        </label>
+                        <div class="distance-controls">
+                            <label for="distanceSelect">Distance:</label>
+                            <select id="distanceSelect">
+                                <option value="50ft">50 ft</option>
+                                <option value="100ft">100 ft</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-small" onclick="figureExportTool.resetLimitsToDefaults()">Reset to NYCT Defaults</button>
+                    </div>
+                    <div class="limit-table-container">
+                        <table class="limit-table" id="limitTable">
+                            <thead>
+                                <tr>
+                                    <th>Band</th>
+                                    <th>Frequency Range</th>
+                                    <th>Limit (dBμV/m/MHz)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-band="B0">
+                                    <td><strong>B0</strong></td>
+                                    <td>10 kHz – 160 kHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B0" value="126" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B1">
+                                    <td><strong>B1</strong></td>
+                                    <td>150 kHz – 650 kHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B1" value="126" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B2">
+                                    <td><strong>B2</strong></td>
+                                    <td>500 kHz – 3 MHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B2" value="115" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B3">
+                                    <td><strong>B3</strong></td>
+                                    <td>2.5 MHz – 7.5 MHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B3" value="100" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B4">
+                                    <td><strong>B4</strong></td>
+                                    <td>5 MHz – 30 MHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B4" value="85" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B5">
+                                    <td><strong>B5</strong></td>
+                                    <td>25 MHz – 325 MHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B5" value="81" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B6">
+                                    <td><strong>B6</strong></td>
+                                    <td>300 MHz – 1.3 GHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B6" value="96" step="0.1"></td>
+                                </tr>
+                                <tr data-band="B7">
+                                    <td><strong>B7</strong></td>
+                                    <td>1 GHz – 6 GHz</td>
+                                    <td><input type="number" class="limit-input" data-band="B7" value="96" step="0.1"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                Peak Identification Helper
+                <div class="peak-helper-section">
+                    <h3>Peak Identification Helper</h3>
+                    <div class="band-info-display">
+                        <p class="helper-hint">Select an EMC band above to see frequency allocations for that range.</p>
+                    </div>
+                    <div class="peak-results" id="peakResults">
+                        <p class="helper-hint">Choose a band (B0-B7) to view all services allocated in that frequency range.</p>
+                    </div>
+                </div>
+                
+                Enhanced Band Selection
+                <div class="band-section">
+                    <h2>EMC Band Selection</h2>
+                    <div class="band-buttons">
+                        <button class="band-btn" data-band="B0">B0</button>
+                        <button class="band-btn" data-band="B1">B1</button>
+                        <button class="band-btn" data-band="B2">B2</button>
+                        <button class="band-btn" data-band="B3">B3</button>
+                        <button class="band-btn" data-band="B4">B4</button>
+                        <button class="band-btn" data-band="B5">B5</button>
+                        <button class="band-btn" data-band="B6">B6</button>
+                        <button class="band-btn" data-band="B7">B7</button>
+                    </div>
+                    <div class="frequency-range">
+                        <label for="frequencyRange">Frequency Range:</label>
+                        <input type="text" id="frequencyRange" readonly placeholder="Select a band to see frequency range">
+                    </div>
+                </div>
+                
+    -->
+    <!-- END OF BACKUP SECTIONS -->
+    
+    <!-- Extra safeguard: Hide any accidentally visible sections -->
+    <style>
+    .limit-lines-section, 
+    .peak-helper-section, 
+    .band-section, 
+    .band-buttons,
+    #limitTable,
+    #peakResults,
+    .band-info-display,
+    .frequency-range {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+    </style>
+
+</body>
+</html> 

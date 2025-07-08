@@ -1,0 +1,292 @@
+/* ========================================================================
+   REDA EMC Testing Tool - Welcome Guide Styles
+   ========================================================================
+   Turner Engineering Corporation - Professional EMC Testing Support
+   
+   Welcome guide and tutorial overlay styling
+   ======================================================================== */
+
+.welcome-guide-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.welcome-guide-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 520px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideUp 0.4s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: relative;
+}
+
+.guide-icon {
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  backdrop-filter: blur(10px);
+}
+
+.guide-header h2 {
+  margin: 0;
+  font-size: var(--font-size-xlarge);
+  font-weight: 600;
+  flex: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.close-btn {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.guide-content {
+  padding: var(--spacing-xl);
+  background: white;
+}
+
+.guide-content p {
+  margin: 0;
+  font-size: var(--font-size-large);
+  line-height: 1.6;
+  color: var(--color-text);
+  white-space: pre-line;
+}
+
+.guide-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.progress-dots {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #cbd5e0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.progress-dot.active {
+  background: #667eea;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+}
+
+.progress-dot.completed {
+  background: #48bb78;
+}
+
+.progress-dot:hover {
+  transform: scale(1.1);
+}
+
+.progress-text {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.guide-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  background: white;
+  border-top: 1px solid #e2e8f0;
+}
+
+.navigation-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.guide-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-medium);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-medium);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.guide-btn.primary {
+  background: #667eea;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.guide-btn.primary:hover {
+  background: #5a67d8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.guide-btn.secondary {
+  background: #e2e8f0;
+  color: var(--color-text);
+  border: 1px solid #cbd5e0;
+}
+
+.guide-btn.secondary:hover {
+  background: #cbd5e0;
+  transform: translateY(-1px);
+}
+
+/* Highlight effect for guided elements */
+.guide-highlight {
+  position: relative;
+  z-index: 9999;
+  animation: pulseHighlight 2s infinite;
+}
+
+.guide-highlight::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 3px solid #667eea;
+  border-radius: 12px;
+  pointer-events: none;
+  animation: glowBorder 2s infinite;
+}
+
+@keyframes pulseHighlight {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0.1);
+  }
+}
+
+@keyframes glowBorder {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .welcome-guide-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .guide-header {
+    padding: var(--spacing-lg);
+  }
+  
+  .guide-header h2 {
+    font-size: var(--font-size-large);
+  }
+  
+  .guide-content {
+    padding: var(--spacing-lg);
+  }
+  
+  .guide-content p {
+    font-size: var(--font-size-medium);
+  }
+  
+  .guide-actions {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+  
+  .navigation-buttons {
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .guide-btn {
+    flex: 1;
+  }
+} 

@@ -1,0 +1,244 @@
+/* ========================================================================
+   REDA EMC Testing Tool - Mode Selector Styles
+   ========================================================================
+   Turner Engineering Corporation - Professional EMC Testing Support
+   
+   Styles for the mode selection tabs component
+   ======================================================================== */
+
+.mode-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-sm);
+}
+
+.mode-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-xs);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.mode-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 120px;
+  text-align: center;
+  outline: none;
+}
+
+.mode-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: var(--border-radius-small);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.mode-tab:hover::before {
+  opacity: 1;
+}
+
+.mode-icon {
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.mode-tab:hover .mode-icon {
+  transform: scale(1.1);
+}
+
+.mode-text {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.mode-subtitle {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Active State Styles */
+.mode-tab.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mode-tab.active .mode-text,
+.mode-tab.active .mode-subtitle {
+  color: white;
+}
+
+.mode-tab.active .mode-icon {
+  transform: scale(1.15);
+}
+
+/* Theme-specific Active States */
+.csv-theme .mode-tab.csv-mode.active {
+  background: linear-gradient(135deg, #1e3a8a 0%, #334260 100%);
+  border-color: #1e3a8a;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+}
+
+.image-theme .mode-tab.image-mode.active {
+  background: linear-gradient(135deg, #1a472a 0%, #2d5a32 100%);
+  border-color: #1a472a;
+  box-shadow: 0 4px 12px rgba(26, 71, 42, 0.3);
+}
+
+.correction-theme .mode-tab.correction-mode.active {
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
+  border-color: #b8860b;
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
+}
+
+/* Hover States for Non-Active Tabs */
+.mode-tab:not(.active):hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--color-border);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.csv-theme .mode-tab:not(.active):hover {
+  border-color: #1e3a8a;
+}
+
+.image-theme .mode-tab:not(.active):hover {
+  border-color: #1a472a;
+}
+
+.correction-theme .mode-tab:not(.active):hover {
+  border-color: #b8860b;
+}
+
+/* Focus States for Accessibility */
+.mode-tab:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.mode-tab:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .mode-tabs {
+    gap: var(--spacing-xs);
+  }
+  
+  .mode-tab {
+    min-width: 100px;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .mode-text {
+    font-size: 0.8rem;
+  }
+  
+  .mode-subtitle {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .mode-selector {
+    padding: var(--spacing-xs);
+  }
+  
+  .mode-tabs {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .mode-tab {
+    flex: 1;
+    min-width: 80px;
+    padding: var(--spacing-sm);
+  }
+  
+  .mode-icon {
+    font-size: 1.2rem;
+  }
+  
+  .mode-text {
+    font-size: 0.75rem;
+  }
+  
+  .mode-subtitle {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mode-tabs {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .mode-tab {
+    flex-direction: row;
+    gap: var(--spacing-sm);
+    min-width: auto;
+    justify-content: flex-start;
+    text-align: left;
+  }
+  
+  .mode-tab .mode-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  
+  .mode-tab .mode-text,
+  .mode-tab .mode-subtitle {
+    text-align: left;
+  }
+}
+
+/* Animation for Mode Switching */
+@keyframes modeSwitch {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mode-tab.active {
+  animation: modeSwitch 0.3s ease-out;
+} 
