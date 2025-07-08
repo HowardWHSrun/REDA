@@ -9,5 +9,5 @@
 export { default as ModeSelector } from './ModeSelector/ModeSelector';
 export { default as CsvUpload } from './CsvUpload/CsvUpload';
 export { default as CsvVisualization } from './CsvVisualization/CsvVisualization';
-export { default as FolderBrowser } from './FolderBrowser/FolderBrowser';
+export { default as FolderBrowser } from './FolderBrowser/FolderBrowser'; 
 export { default as WelcomeGuide } from './WelcomeGuide/WelcomeGuide'; 

@@ -974,7 +974,7 @@ export const CsvVisualization: React.FC<CsvVisualizationProps> = ({
           >
             {vizState.isExporting ? 'Exporting...' : 'Export Default View'}
           </button>
-        </div>
+          </div>
 
         {/* Title Edit Input */}
         {vizState.isEditingTitle && (

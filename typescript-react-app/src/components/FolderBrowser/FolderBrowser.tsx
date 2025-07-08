@@ -105,14 +105,14 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
 
     // Use band-relative noisiness analysis
     const analyses = NoiseAnalysisService.calculateBandRelativeNoisiness(filesData);
-    
-    // Update items with analysis results
+      
+      // Update items with analysis results
     const updatedItems = [...items];
     analyses.forEach(analysis => {
       const fileData = filesData.find(fd => fd.filename === analysis.filename);
       if (fileData) {
         const itemIndex = updatedItems.findIndex(ui => ui.path === fileData.item.path);
-        if (itemIndex >= 0) {
+          if (itemIndex >= 0) {
           updatedItems[itemIndex] = { 
             ...updatedItems[itemIndex], 
             noisinessAnalysis: analysis,
@@ -135,12 +135,12 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
 
   const applyFilters = useCallback((allItems: FolderItem[]) => {
     let filtered = [...allItems];
-    
+
     // Band filter (only CSV files, no folders to worry about)
     if (selectedBandFilter !== 'all') {
       filtered = filtered.filter(item => item.detectedBand === selectedBandFilter);
     }
-    
+
     // Sort
     filtered.sort((a, b) => {
       if (sortBy === 'noisiness') {
@@ -191,23 +191,23 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
           fileHandle: handle
         };
 
-        try {
-          const file = await handle.getFile();
-          item.size = file.size;
-          item.modified = new Date(file.lastModified);
-          
-          // Detect band for CSV files
-          const bandFromFilename = CsvService.detectBandFromFilename(name);
-          if (bandFromFilename) {
-            item.detectedBand = bandFromFilename;
-            item.bandConfidence = 'high';
-          } else {
-            item.detectedBand = null;
-            item.bandConfidence = 'low';
-          }
-        } catch (err) {
-          // Skip files we can't access
-          continue;
+          try {
+            const file = await handle.getFile();
+            item.size = file.size;
+            item.modified = new Date(file.lastModified);
+            
+            // Detect band for CSV files
+              const bandFromFilename = CsvService.detectBandFromFilename(name);
+              if (bandFromFilename) {
+                item.detectedBand = bandFromFilename;
+                item.bandConfidence = 'high';
+              } else {
+                item.detectedBand = null;
+                item.bandConfidence = 'low';
+            }
+          } catch (err) {
+            // Skip files we can't access
+            continue;
         }
 
         items.push(item);
@@ -237,32 +237,32 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
       const file = files[i];
       
       // Only include CSV files
-      const isCSV = CsvService.isValidCsvFile(file);
-      if (!isCSV) {
-        continue;
-      }
+        const isCSV = CsvService.isValidCsvFile(file);
+        if (!isCSV) {
+          continue;
+        }
 
-      const item: FolderItem = {
-        name: file.name,
+        const item: FolderItem = {
+          name: file.name,
         path: file.name, // Simplified - just the filename
-        type: 'file',
-        size: file.size,
-        modified: new Date(file.lastModified),
+          type: 'file',
+          size: file.size,
+          modified: new Date(file.lastModified),
         isCSV: true
-      };
+        };
 
-      // Detect band for CSV files
-      const bandFromFilename = CsvService.detectBandFromFilename(file.name);
-      if (bandFromFilename) {
-        item.detectedBand = bandFromFilename;
-        item.bandConfidence = 'high';
-      } else {
-        item.detectedBand = null;
-        item.bandConfidence = 'low';
+        // Detect band for CSV files
+          const bandFromFilename = CsvService.detectBandFromFilename(file.name);
+          if (bandFromFilename) {
+            item.detectedBand = bandFromFilename;
+            item.bandConfidence = 'high';
+          } else {
+            item.detectedBand = null;
+            item.bandConfidence = 'low';
+        }
+
+        items.push(item);
       }
-
-      items.push(item);
-    }
 
     // Simple alphabetical sort
     items.sort((a, b) => a.name.localeCompare(b.name));
@@ -311,7 +311,7 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
   // FILE SELECTION
   // ========================================================================
 
-  const toggleFileSelection = useCallback((path: string, itemBand?: BandType | null) => {
+    const toggleFileSelection = useCallback((path: string, itemBand?: BandType | null) => {
     setSelectedFiles(prev => {
       const newSelection = new Set<string>();
       
@@ -383,45 +383,45 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
       >
         <div className="item-details">
           <div className="item-name">{item.name}</div>
-          <div className="item-meta">
-            <div className="band-info">
-              {item.detectedBand && (
-                <span className={`band-indicator ${item.bandConfidence}`}>
-                  {item.detectedBand}
-                </span>
-              )}
-              {!item.detectedBand && (
-                <span className="band-indicator unknown">
+            <div className="item-meta">
+              <div className="band-info">
+                {item.detectedBand && (
+                  <span className={`band-indicator ${item.bandConfidence}`}>
+                    {item.detectedBand}
+                  </span>
+                )}
+                {!item.detectedBand && (
+                  <span className="band-indicator unknown">
                   Unknown
-                </span>
+                  </span>
+                )}
+              </div>
+              {item.noisinessAnalysis && (
+                <div className="noisiness-info">
+                  <span 
+                    className="noisiness-indicator"
+                    style={{ color: NoiseAnalysisService.getNoisinessColor(item.noisinessAnalysis.noisinessIndex) }}
+                  title={`Noisiness: ${item.noisinessAnalysis.noisinessIndex}/10 (${NoiseAnalysisService.getNoisinessDescription(item.noisinessAnalysis.noisinessIndex)})`}
+                  >
+                  {item.noisinessAnalysis.noisinessIndex}
+                  </span>
+                </div>
+              )}
+              {!item.noisinessAnalysis && isAnalyzingNoise && (
+                <div className="noisiness-info">
+                <span className="noisiness-loading">...</span>
+                </div>
               )}
             </div>
-            {item.noisinessAnalysis && (
-              <div className="noisiness-info">
-                <span 
-                  className="noisiness-indicator"
-                  style={{ color: NoiseAnalysisService.getNoisinessColor(item.noisinessAnalysis.noisinessIndex) }}
-                  title={`Noisiness: ${item.noisinessAnalysis.noisinessIndex}/10 (${NoiseAnalysisService.getNoisinessDescription(item.noisinessAnalysis.noisinessIndex)})`}
-                >
-                  {item.noisinessAnalysis.noisinessIndex}
-                </span>
-              </div>
-            )}
-            {!item.noisinessAnalysis && isAnalyzingNoise && (
-              <div className="noisiness-info">
-                <span className="noisiness-loading">...</span>
-              </div>
-            )}
+        </div>
+          <div className="selection-indicator">
+            <input 
+              type="checkbox" 
+              checked={isSelected} 
+              onChange={() => toggleFileSelection(item.path, item.detectedBand)}
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
-        </div>
-        <div className="selection-indicator">
-          <input 
-            type="checkbox" 
-            checked={isSelected} 
-            onChange={() => toggleFileSelection(item.path, item.detectedBand)}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
       </div>
     );
   };
@@ -455,23 +455,23 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({
           {currentPath ? ` - ${currentPath}` : ''}
         </h3>
         {currentPath && (
-          <div className="browser-controls">
-            <button 
-              onClick={openFolderDialog}
-              className="open-folder-btn"
-              disabled={isLoading}
-            >
+        <div className="browser-controls">
+          <button 
+            onClick={openFolderDialog}
+            className="open-folder-btn"
+            disabled={isLoading}
+          >
               Change Folder
             </button>
           </div>
-        )}
+          )}
       </div>
 
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+              {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
 
       {currentPath && (
         <>
